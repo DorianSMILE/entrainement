@@ -1,0 +1,16 @@
+services:
+  postgres:
+    restart: always
+    image: postgres:16-alpine
+    container_name: ticketing-postgres
+    environment:
+      POSTGRES_DB: ticket
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - ticketing_pg_data:/var/lib/postgresql/data
+
+volumes:
+  ticketing_pg_data:
