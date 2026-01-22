@@ -27,13 +27,17 @@ domain : Contient les règles métiers, zéro dépendance technique
 
 infrastructure : Contient les liens externe vers la BDD et les autres action possible vers des systèmes externes (impl)
         - JPA entities + Spring Data repos
-        - détails techniques (DB, files, HTTP clients). Implémente les ports.
+        - détails techniques (DB (JPA/Spec), files, HTTP clients). Implémente les ports.
 
 application : Orcherstre la logique métier et ressence les cas d'utilisation (contrat)
         - Ne dois pas faire du métier, elle coordonne le domaine
         - Elle devrait dépendre d'interfaces (ports), pas de classes infra concrètes
 
 
-application - Elle devrait dépendre d'interfaces (ports), pas de classes infra concrètes
+Norme hexagonale, c’est :
 
-infra - Implémente les ports
+ - Dépendances dirigées vers le cœur
+
+ - Ports/adapters aux frontières
+
+ - Domaine isolé
