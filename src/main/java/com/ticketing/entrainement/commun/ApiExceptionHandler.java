@@ -1,5 +1,6 @@
 package com.ticketing.entrainement.commun;
 
+import com.ticketing.entrainement.domain.InvalidTicketStatusTransition;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,5 +42,11 @@ public class ApiExceptionHandler {
             cur = cur.getCause();
         }
         return cur;
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(InvalidTicketStatusTransition.class)
+    public ErrorResponse handleInvalidTransition(InvalidTicketStatusTransition ex) {
+        return new ErrorResponse("INVALID_STATUS_TRANSITION", ex.getMessage(), Instant.now());
     }
 }
