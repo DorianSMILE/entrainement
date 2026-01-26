@@ -52,20 +52,20 @@ public class TicketService {
         if (title != null) {
             String t = title.trim();
             if (!t.isEmpty() && !t.equals(updated.title())) {
-                updated = updated.rename(t); // ou rename(t)
+                updated = updated.rename(t);
             }
         }
 
         if (description != null && !description.equals(updated.description())) {
-            updated = updated.changeDescription(description); // ou changeDescription(...)
+            updated = updated.changeDescription(description);
         }
 
         if (status != null && status != updated.status()) {
-            updated = updated.changeStatus(status); // règle métier + copie
+            updated = updated.changeStatus(status);
         }
 
         if (priority != null && priority != updated.priority()) {
-            updated = updated.changePriority(priority); // ou changePriority(...)
+            updated = updated.changePriority(priority);
         }
 
         if (updated.equals(ticket)) return ticket;
