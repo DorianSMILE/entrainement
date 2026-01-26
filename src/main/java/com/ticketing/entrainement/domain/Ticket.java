@@ -1,7 +1,6 @@
 package com.ticketing.entrainement.domain;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -15,21 +14,30 @@ public record Ticket(
     Instant updatedAt
 ) {
 
+    private static final int TITLE_MAX = 200;
+    private static final int DESCRIPTION_MAX = 10_000;
+
     public Ticket rename(String newTitle) {
         if (newTitle == null) return this;
         ensureNotClosed();
 
         String t = newTitle.trim();
         if (t.isEmpty()) throw new InvalidTicketTitleException("Title cannot be blank");
-        if (t.length() > 200) throw new InvalidTicketTitleException("Title too long (max 200)");
+        if (t.length() > TITLE_MAX) throw new InvalidTicketTitleException("Title too long (max 200)");
         if (t.equals(title)) return this;
 
         return new Ticket(id, t, description, status, priority, createdAt, Instant.now());
     }
 
     public Ticket changeDescription(String newDescription) {
-        if (newDescription == null || newDescription.equals(description)) return this;
+        if (newDescription == null) return this;
         ensureNotClosed();
+
+        if (newDescription.length() > DESCRIPTION_MAX) {
+            throw new InvalidTicketDescriptionException("Description too long (max " + DESCRIPTION_MAX + ")");
+        }
+        if (newDescription.equals(description)) return this;
+
         return new Ticket(id, title, newDescription, status, priority, createdAt, Instant.now());
     }
 
