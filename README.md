@@ -23,7 +23,7 @@ Flyway applique automatiquement les migrations au démarrage.
 
 -- **Swagger** --
 
-http://localhost:8080/swagger-ui/index.html
+ http://localhost:8080/swagger-ui/index.html
 
 **ARCHI Hexagonale**
 
@@ -67,3 +67,21 @@ flowchart LR
   infrastructure["infrastructure<br/>adapters = port implementations"] --> application
   infrastructure --> domain
 ```
+
+TODO : Protéger avec auth le metrics/prometheus
+
+Grace à actuator (métric) + prometheus (scraping) + grafana (visualisation)
+
+ SLA / perf : temps de réponse p95/p99
+ Qualité : taux de 4xx/5xx
+ Santé : mémoire, threads, GC
+ Capacité : nombre de requêtes, throughput
+ Alerting : notification quand ça dérape
+
+Grafana
+
+ http://localhost:3000/
+
+Prometheus
+
+ http://localhost:9090/
