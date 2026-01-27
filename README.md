@@ -86,3 +86,4 @@ Grafana
 Prometheus
 
  http://localhost:9090/
+ http://localhost:8080/actuator/prometheus

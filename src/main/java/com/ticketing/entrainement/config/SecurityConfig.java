@@ -24,7 +24,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/tickets/**").permitAll()
@@ -39,9 +39,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    UserDetailsService users() {
+    UserDetailsService users(PasswordEncoder encoder) {
         UserDetails user = User.withUsername("admin")
-                .password("{noop}admin") // démo uniquement
+                .password(encoder.encode("admin"))
                 .roles("ADMIN")
                 .build();
         return new InMemoryUserDetailsManager(user);
