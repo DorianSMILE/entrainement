@@ -14,6 +14,6 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=4t6B@nW@SrC3xM
     depends_on:
       - prometheus

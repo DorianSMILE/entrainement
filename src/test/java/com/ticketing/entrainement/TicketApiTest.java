@@ -20,7 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class TicketApiIT {
+class TicketApiTest {
+
+    private static final String USER = "admin";
+    private static final String PASS = "admin";
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
@@ -34,29 +37,42 @@ class TicketApiIT {
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
 
-        // Important: on laisse Flyway créer le schéma
+        // Flyway gère le schéma
         r.add("spring.flyway.enabled", () -> "true");
-        // Et on évite Hibernate schema auto
+        // Hibernate ne doit pas créer/modifier le schéma
         r.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
     }
 
     @Autowired TestRestTemplate rest;
     @Autowired ObjectMapper om;
 
+    private static HttpHeaders authJsonHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBasicAuth(USER, PASS);
+        return headers;
+    }
+
+    private static HttpHeaders authHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(USER, PASS);
+        return headers;
+    }
+
     @Test
     void full_flow_create_get_patch_delete() throws Exception {
         // --- CREATE (POST /tickets) - nécessite auth
-        var createBody = Map.of(
+        Map<String, Object> createBody = Map.of(
                 "title", "Ticket IT",
                 "description", "From integration test",
                 "priority", "MEDIUM"
         );
 
-        ResponseEntity<String> created = rest
-                .withBasicAuth("admin", "admin")
-                .postForEntity("/tickets", createBody, String.class);
+        HttpEntity<Map<String, Object>> createReq = new HttpEntity<>(createBody, authJsonHeaders());
+        ResponseEntity<String> created = rest.exchange("/tickets", HttpMethod.POST, createReq, String.class);
 
         assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(created.getBody()).isNotBlank();
 
         JsonNode createdJson = om.readTree(created.getBody());
         UUID id = UUID.fromString(createdJson.get("id").asText());
@@ -68,17 +84,11 @@ class TicketApiIT {
         JsonNode gotJson = om.readTree(got.getBody());
         assertThat(gotJson.get("title").asText()).isEqualTo("Ticket IT");
 
+        // --- PATCH /tickets/{id} - nécessite auth
         Map<String, Object> patchBody = Map.of("title", "Ticket IT updated");
+        HttpEntity<Map<String, Object>> patchReq = new HttpEntity<>(patchBody, authJsonHeaders());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, Object>> patchReq = new HttpEntity<>(patchBody, headers);
-
-        ResponseEntity<String> patched = rest
-                .withBasicAuth("admin", "admin")
-                .exchange("/tickets/" + id, HttpMethod.PATCH, patchReq, String.class);
-
+        ResponseEntity<String> patched = rest.exchange("/tickets/" + id, HttpMethod.PATCH, patchReq, String.class);
         assertThat(patched.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         JsonNode patchedJson = om.readTree(patched.getBody());
@@ -89,9 +99,8 @@ class TicketApiIT {
         assertThat(list.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // --- DELETE /tickets/{id} - nécessite auth
-        ResponseEntity<Void> deleted = rest
-                .withBasicAuth("admin", "admin")
-                .exchange("/tickets/" + id, HttpMethod.DELETE, null, Void.class);
+        HttpEntity<Void> delReq = new HttpEntity<>(authHeaders());
+        ResponseEntity<Void> deleted = rest.exchange("/tickets/" + id, HttpMethod.DELETE, delReq, Void.class);
 
         assertThat(deleted.getStatusCode()).isIn(HttpStatus.NO_CONTENT, HttpStatus.OK);
 

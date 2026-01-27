@@ -11,8 +11,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RestController
@@ -26,9 +28,12 @@ public class TicketController {
     }
 
     @PostMapping
-    public TicketResponse create(@RequestBody @Valid CreateTicketRequest req) {
+    public ResponseEntity<TicketResponse> create(@RequestBody @Valid CreateTicketRequest req) {
         Ticket t = service.create(req.title(), req.description(), req.priority());
-        return toResponse(t);
+        TicketResponse body = toResponse(t);
+
+        URI location = URI.create("/tickets/" + t.id());
+        return ResponseEntity.created(location).body(body); // => 201 + Location
     }
 
     @GetMapping("/{id}")
