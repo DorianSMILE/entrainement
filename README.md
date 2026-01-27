@@ -14,6 +14,7 @@ Stop :
 -- **RUN** --
 
         mvn spring-boot:run -e
+        mvn -B clean test
 
 -- **DB & migrations (Flyway)** --
 
