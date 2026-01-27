@@ -1,16 +1,13 @@
 package com.ticketing.entrainement.application;
 
+import com.ticketing.entrainement.application.ports.TicketRepositoryPort;
 import com.ticketing.entrainement.commun.NotFoundException;
 import com.ticketing.entrainement.domain.Ticket;
 import com.ticketing.entrainement.domain.TicketPriority;
 import com.ticketing.entrainement.domain.TicketStatus;
-import com.ticketing.entrainement.infrastructure.TicketEntity;
-import com.ticketing.entrainement.infrastructure.TicketEntityMapper;
-import com.ticketing.entrainement.infrastructure.TicketJpaRepository;
-import com.ticketing.entrainement.infrastructure.TicketSpecifications;
+import com.ticketing.entrainement.infrastructure.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +16,10 @@ import java.util.UUID;
 
 @Service
 public class TicketService {
-    private final TicketJpaRepository repo;
-    private final TicketEntityMapper mapper;
+    private final TicketRepositoryPort port;
 
-    public TicketService(TicketJpaRepository repo, TicketEntityMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
+    public TicketService(TicketRepositoryPort port) {
+        this.port = port;
     }
 
     @Transactional
@@ -33,72 +28,56 @@ public class TicketService {
         Ticket ticket = new Ticket(UUID.randomUUID(), title, description,
                 TicketStatus.OPEN, priority, now, now);
 
-        TicketEntity saved = repo.save(mapper.toEntity(ticket));
-        return mapper.toDomain(saved);
+        return port.save(ticket);
     }
 
     @Transactional(readOnly = true)
     public Ticket getById(UUID id) {
-        TicketEntity entity = repo.findById(id)
+        return port.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ticket not found: " + id));
-        return mapper.toDomain(entity);
     }
 
     @Transactional(readOnly = true)
     public Page<Ticket> list(TicketStatus status, TicketPriority priority, String q, Pageable pageable) {
-
-        Specification<TicketEntity> spec = TicketSpecifications.hasStatus(status)
-                .and(TicketSpecifications.hasPriority(priority))
-                .and(TicketSpecifications.textSearch(q));
-
-        return repo.findAll(spec, pageable).map(mapper::toDomain);
+        return port.search(status, priority, q, pageable);
     }
 
     @Transactional
     public Ticket update(UUID id, String title, String description, TicketStatus status, TicketPriority priority) {
-        TicketEntity entity = repo.findById(id)
+        Ticket ticket = port.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ticket not found: " + id));
 
-        boolean changed = false;
+        Ticket updated = ticket;
 
         if (title != null) {
             String t = title.trim();
-            if (!t.isEmpty() && !t.equals(entity.getTitle())) {
-                entity.setTitle(t);
-                changed = true;
+            if (!t.isEmpty() && !t.equals(updated.title())) {
+                updated = updated.rename(t);
             }
         }
 
-        if (description != null && !description.equals(entity.getDescription())) {
-            entity.setDescription(description);
-            changed = true;
+        if (description != null && !description.equals(updated.description())) {
+            updated = updated.changeDescription(description);
         }
 
-        if (status != null && status != entity.getStatus()) {
-            entity.setStatus(status);
-            changed = true;
+        if (status != null && status != updated.status()) {
+            updated = updated.changeStatus(status);
         }
 
-        if (priority != null && priority != entity.getPriority()) {
-            entity.setPriority(priority);
-            changed = true;
+        if (priority != null && priority != updated.priority()) {
+            updated = updated.changePriority(priority);
         }
 
-        if (changed) {
-            entity.setUpdatedAt(Instant.now());
-        }
-
-        TicketEntity saved = repo.save(entity);
-        return mapper.toDomain(saved);
+        if (updated.equals(ticket)) return ticket;
+        return port.save(updated);
     }
 
     @Transactional
     public void delete(UUID id) {
-        if (!repo.existsById(id)) {
+        if (!port.existsById(id)) {
             throw new NotFoundException("Ticket not found: " + id);
         }
-        repo.deleteById(id);
+        port.deleteById(id);
     }
-
 
 }

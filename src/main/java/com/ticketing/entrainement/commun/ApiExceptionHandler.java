@@ -1,5 +1,9 @@
 package com.ticketing.entrainement.commun;
 
+import com.ticketing.entrainement.domain.InvalidTicketDescriptionException;
+import com.ticketing.entrainement.domain.InvalidTicketStatusTransition;
+import com.ticketing.entrainement.domain.InvalidTicketTitleException;
+import com.ticketing.entrainement.domain.TicketClosedException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,4 +46,29 @@ public class ApiExceptionHandler {
         }
         return cur;
     }
+
+    @ResponseStatus(HttpStatus.CONFLICT) // 409
+    @ExceptionHandler(TicketClosedException.class)
+    public ErrorResponse handleTicketClosed(TicketClosedException ex) {
+        return new ErrorResponse("TICKET_CLOSED", ex.getMessage(), Instant.now());
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(InvalidTicketStatusTransition.class)
+    public ErrorResponse handleInvalidTransition(InvalidTicketStatusTransition ex) {
+        return new ErrorResponse("INVALID_STATUS_TRANSITION", ex.getMessage(), Instant.now());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(InvalidTicketTitleException.class)
+    public ErrorResponse handleInvalidTitle(InvalidTicketTitleException ex) {
+        return new ErrorResponse("INVALID_TITLE", ex.getMessage(), Instant.now());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(InvalidTicketDescriptionException.class)
+    public ErrorResponse handleInvalidDescription(InvalidTicketDescriptionException ex) {
+        return new ErrorResponse("INVALID_DESCRIPTION", ex.getMessage(), Instant.now());
+    }
+
 }
