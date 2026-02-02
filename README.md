@@ -14,6 +14,7 @@ Stop :
 -- **RUN** --
 
         mvn spring-boot:run -e
+        mvn -B clean test
 
 -- **DB & migrations (Flyway)** --
 
@@ -85,3 +86,4 @@ Grafana
 Prometheus
 
  http://localhost:9090/
+ http://localhost:8080/actuator/prometheus
