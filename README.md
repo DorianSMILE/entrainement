@@ -94,3 +94,13 @@ Prometheus
 ```env
 GRAFANA_ADMIN_PASSWORD=admin
 ```
+
+API : http://localhost:8080
+
+Swagger : http://localhost:8080/swagger-ui/index.html
+
+Actuator : http://localhost:8080/actuator/health
+
+Prometheus : http://localhost:9090
+
+Grafana : http://localhost:3000 (admin / ton mdp)
