@@ -87,3 +87,10 @@ Prometheus
 
  http://localhost:9090/
  http://localhost:8080/actuator/prometheus
+
+### Config grafana
+1. Créer un fichier `.env` à la racine (non versionné) :
+
+```env
+GRAFANA_ADMIN_PASSWORD=admin
+```
