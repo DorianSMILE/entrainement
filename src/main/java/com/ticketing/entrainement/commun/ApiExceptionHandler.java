@@ -1,9 +1,8 @@
 package com.ticketing.entrainement.commun;
 
-import com.ticketing.entrainement.domain.InvalidTicketDescriptionException;
-import com.ticketing.entrainement.domain.InvalidTicketStatusTransition;
-import com.ticketing.entrainement.domain.InvalidTicketTitleException;
-import com.ticketing.entrainement.domain.TicketClosedException;
+import com.ticketing.entrainement.commun.exception.DuplicateErrorResponse;
+import com.ticketing.entrainement.commun.exception.NotFoundException;
+import com.ticketing.entrainement.domain.exception.*;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -69,6 +68,17 @@ public class ApiExceptionHandler {
     @ExceptionHandler(InvalidTicketDescriptionException.class)
     public ErrorResponse handleInvalidDescription(InvalidTicketDescriptionException ex) {
         return new ErrorResponse("INVALID_DESCRIPTION", ex.getMessage(), Instant.now());
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(DuplicateTicketException.class)
+    public DuplicateErrorResponse handleDuplicate(DuplicateTicketException ex) {
+        return new DuplicateErrorResponse(
+                "DUPLICATE_TICKET",
+                ex.getMessage(),
+                ex.duplicates(),
+                Instant.now()
+        );
     }
 
 }

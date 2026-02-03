@@ -64,6 +64,24 @@ Flyway applique automatiquement les migrations au démarrage.
 
  - Domaine isolé
 
+Dit autrement, l'utilité principale de l'hexagonal est de faire en sorte d'isolé les règles métiers et les cas d'usage.
+On greffe au domain des interfaces (port) qui eux sont implémentés ailleurs (adapter).
+De cette manière, on va réduire fortement l’impact sur la logique métier.
+Donc, mes use case ne connaissent pas Posgres, Mongo, Spring, HTTP, ils ne connaissent que des interfaces.
+
+Cas concret :
+- Migrer de Postgres vers Mongo (ou cohabitation)
+- Passer l'API REST à event-driven (Kafka/Rabbit)
+- Remplacer Stipe par Adyen / Paypal
+
+Les raisons de choisir cette architecture
+
+Tu as des dépendances externes (BDD, API, queue, fichiers, mail, cache…)
+Tu prévois des changements de techno (ou tu veux éviter d’y penser)
+Tu veux tester fort ton métier sans infrastructure
+Tu as plusieurs entrées (REST + batch + event)
+Ton domaine est non trivial (règles métier, cas limites, validations, états)
+
 ```mermaid
 flowchart LR
   api["api"] --> application["application<br/>ports = interfaces"]

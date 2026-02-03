@@ -36,6 +36,9 @@ public class TicketEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "normalized_title", nullable = false)
+    private String normalizedTitle;
+
     protected TicketEntity() {
         // JPA
     }
@@ -61,6 +64,9 @@ public class TicketEntity {
 
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getNormalizedTitle() { return normalizedTitle; }
+    public void setNormalizedTitle(String normalizedTitle) { this.normalizedTitle = normalizedTitle; }
 
     @PrePersist
     public void onCreate() {
