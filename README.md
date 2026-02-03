@@ -22,10 +22,6 @@ Scripts : src/main/resources/db/migration
 Convention : V1__init.sql, V2__...sql, …
 Flyway applique automatiquement les migrations au démarrage.
 
--- **Swagger** --
-
- http://localhost:8080/swagger-ui/index.html
-
 **ARCHI Hexagonale**
 
 *Objectif* : isoler le cœur (métier + use cases) des détails techniques (HTTP, DB).
@@ -79,21 +75,14 @@ Grace à actuator (métric) + prometheus (scraping) + grafana (visualisation)
  Capacité : nombre de requêtes, throughput
  Alerting : notification quand ça dérape
 
-Grafana
-
- http://localhost:3000/
-
-Prometheus
-
- http://localhost:9090/
- http://localhost:8080/actuator/prometheus
-
 ### Config grafana
 1. Créer un fichier `.env` à la racine (non versionné) :
 
 ```env
 GRAFANA_ADMIN_PASSWORD=admin
 ```
+
+Swagger : http://localhost:8080/swagger-ui/index.html
 
 API : http://localhost:8080
 
@@ -102,5 +91,6 @@ Swagger : http://localhost:8080/swagger-ui/index.html
 Actuator : http://localhost:8080/actuator/health
 
 Prometheus : http://localhost:9090
+             http://localhost:8080/actuator/prometheus
 
-Grafana : http://localhost:3000 (admin / ton mdp)
+Grafana : http://localhost:3000
