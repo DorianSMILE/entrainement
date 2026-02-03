@@ -1,4 +1,4 @@
-package com.ticketing.entrainement.domain;
+package com.ticketing.entrainement.domain.exception;
 
 import java.util.UUID;
 

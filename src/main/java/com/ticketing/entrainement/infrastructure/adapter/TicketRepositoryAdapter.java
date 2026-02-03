@@ -1,7 +1,11 @@
-package com.ticketing.entrainement.infrastructure;
+package com.ticketing.entrainement.infrastructure.adapter;
 
 import com.ticketing.entrainement.application.ports.TicketRepositoryPort;
 import com.ticketing.entrainement.domain.*;
+import com.ticketing.entrainement.infrastructure.TicketEntity;
+import com.ticketing.entrainement.infrastructure.TicketEntityMapper;
+import com.ticketing.entrainement.infrastructure.TicketJpaRepository;
+import com.ticketing.entrainement.infrastructure.TicketSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;

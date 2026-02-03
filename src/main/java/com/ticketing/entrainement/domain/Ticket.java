@@ -1,5 +1,10 @@
 package com.ticketing.entrainement.domain;
 
+import com.ticketing.entrainement.domain.exception.InvalidTicketDescriptionException;
+import com.ticketing.entrainement.domain.exception.InvalidTicketStatusTransition;
+import com.ticketing.entrainement.domain.exception.InvalidTicketTitleException;
+import com.ticketing.entrainement.domain.exception.TicketClosedException;
+
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;

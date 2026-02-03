@@ -1,4 +1,4 @@
-package com.ticketing.entrainement.domain;
+package com.ticketing.entrainement.domain.exception;
 
 public class InvalidTicketTitleException extends RuntimeException {
     public InvalidTicketTitleException(String message) {

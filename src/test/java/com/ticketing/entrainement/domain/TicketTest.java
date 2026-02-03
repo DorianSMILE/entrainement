@@ -1,5 +1,9 @@
 package com.ticketing.entrainement.domain;
 
+import com.ticketing.entrainement.domain.exception.InvalidTicketDescriptionException;
+import com.ticketing.entrainement.domain.exception.InvalidTicketStatusTransition;
+import com.ticketing.entrainement.domain.exception.InvalidTicketTitleException;
+import com.ticketing.entrainement.domain.exception.TicketClosedException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
