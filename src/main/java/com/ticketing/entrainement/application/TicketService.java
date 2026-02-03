@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -34,9 +35,17 @@ public class TicketService {
         if (!duplicates.isEmpty()) {
             throw new DuplicateTicketException(
                     "Duplicate ticket detected (same normalized title).",
-                    duplicates
-            );
+                    duplicates,
+                    null);
         }
+
+        // B) Fuzzy
+        double threshold = 0.55;
+        var fuzzy = duplicateChecker.findFuzzyDuplicates(title, threshold, 5);
+        if (!fuzzy.isEmpty()) {
+            throw new DuplicateTicketException("Duplicate ticket (fuzzy match).", List.of(), fuzzy);
+        }
+
 
         Instant now = Instant.now();
         Ticket ticket = new Ticket(UUID.randomUUID(), title, description,
