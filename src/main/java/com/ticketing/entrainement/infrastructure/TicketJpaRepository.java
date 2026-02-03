@@ -24,4 +24,20 @@ public interface TicketJpaRepository extends JpaRepository<TicketEntity, UUID>, 
             Pageable pageable
     );
 
+    List<TicketEntity> findTop10ByNormalizedTitleAndIdNot(String normalizedTitle, UUID id);
+
+    @Query(value = """
+    SELECT id, title, similarity(title, :title) AS score
+    FROM tickets
+    WHERE id <> :excludeId
+      AND similarity(title, :title) >= :threshold
+    ORDER BY score DESC
+    """, nativeQuery = true)
+    List<DuplicateCandidateRow> findSimilarTitlesExcluding(
+            @Param("title") String title,
+            @Param("excludeId") UUID excludeId,
+            @Param("threshold") double threshold,
+            Pageable pageable
+    );
+
 }

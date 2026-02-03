@@ -1,5 +1,6 @@
 package com.ticketing.entrainement.application;
 
+import com.ticketing.entrainement.api.TicketDuplicateResult;
 import com.ticketing.entrainement.application.ports.TicketDuplicateCheckerPort;
 import com.ticketing.entrainement.application.ports.TicketRepositoryPort;
 import com.ticketing.entrainement.commun.exception.NotFoundException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -39,7 +41,6 @@ public class TicketService {
                     null);
         }
 
-        // B) Fuzzy
         double threshold = 0.55;
         var fuzzy = duplicateChecker.findFuzzyDuplicates(title, threshold, 5);
         if (!fuzzy.isEmpty()) {
@@ -101,6 +102,49 @@ public class TicketService {
             throw new NotFoundException("Ticket not found: " + id);
         }
         port.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TicketDuplicateResult> findDuplicates(UUID id, double threshold, int limit) {
+        Ticket base = port.findById(id)
+                .orElseThrow(() -> new NotFoundException("Ticket not found: " + id));
+
+        String normalized = com.ticketing.entrainement.domain.TicketText.normalize(base.title());
+
+        // EXACT (normalized)
+        List<UUID> exactIds = duplicateChecker
+                .findDuplicateIdsByNormalizedTitleExcluding(normalized, id, limit);
+
+        // FUZZY (pg_trgm)
+        List<DuplicateCandidate> fuzzy = duplicateChecker
+                .findFuzzyDuplicatesExcluding(base.title(), id, threshold, limit);
+
+        // index fuzzy score by id
+        Map<UUID, Double> fuzzyScoreById = fuzzy.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        DuplicateCandidate::id,
+                        DuplicateCandidate::score,
+                        Math::max
+                ));
+
+        // merge ids unique (preserve order: exact first, then fuzzy)
+        java.util.LinkedHashSet<UUID> ids = new java.util.LinkedHashSet<>();
+        ids.addAll(exactIds);
+        ids.addAll(fuzzyScoreById.keySet());
+
+        if (ids.isEmpty()) return List.of();
+
+        List<Ticket> tickets = port.findAllByIds(ids);
+
+        // build results
+        return tickets.stream()
+                .map(t -> {
+                    if (exactIds.contains(t.id())) {
+                        return new TicketDuplicateResult(t, TicketDuplicateResult.MatchType.EXACT, null);
+                    }
+                    return new TicketDuplicateResult(t, TicketDuplicateResult.MatchType.FUZZY, fuzzyScoreById.get(t.id()));
+                })
+                .toList();
     }
 
 }

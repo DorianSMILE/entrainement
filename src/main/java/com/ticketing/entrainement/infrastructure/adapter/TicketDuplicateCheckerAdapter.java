@@ -28,10 +28,27 @@ public class TicketDuplicateCheckerAdapter implements TicketDuplicateCheckerPort
     }
 
     @Override
+    public List<UUID> findDuplicateIdsByNormalizedTitleExcluding(String normalizedTitle, UUID excludeId, int limit) {
+        return repo.findTop10ByNormalizedTitleAndIdNot(normalizedTitle, excludeId).stream()
+                .limit(limit)
+                .map(TicketEntity::getId)
+                .toList();
+    }
+
+    @Override
     public List<DuplicateCandidate> findFuzzyDuplicates(String rawTitle, double threshold, int limit) {
         var rows = repo.findSimilarTitles(rawTitle, threshold, PageRequest.of(0, limit));
         return rows.stream()
                 .map(r -> new DuplicateCandidate(r.getId(), r.getTitle(), r.getScore()))
                 .toList();
     }
+
+    @Override
+    public List<DuplicateCandidate> findFuzzyDuplicatesExcluding(String rawTitle, UUID excludeId, double threshold, int limit) {
+        var rows = repo.findSimilarTitlesExcluding(rawTitle, excludeId, threshold, PageRequest.of(0, limit));
+        return rows.stream()
+                .map(r -> new DuplicateCandidate(r.getId(), r.getTitle(), r.getScore()))
+                .toList();
+    }
+
 }

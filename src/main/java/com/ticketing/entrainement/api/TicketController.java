@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -112,4 +113,20 @@ public class TicketController {
                 t.updatedAt()
         );
     }
+
+    @GetMapping("/{id}/duplicates")
+    public List<TicketDuplicateResponse> duplicates(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "0.55") double threshold,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        return service.findDuplicates(id, threshold, limit).stream()
+                .map(d -> new TicketDuplicateResponse(
+                        toResponse(d.ticket()),
+                        d.matchType(),
+                        d.score()
+                ))
+                .toList();
+    }
+
 }
