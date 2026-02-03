@@ -1,15 +1,22 @@
--- **PostgreSQL** --
-
-        docker compose up -d
-        docker logs -f ticketing-postgres
-
-Stop :
+-- **DOCKER** --
 
         docker compose down
 
 #WARN -v supprime le volume, à utiliser en conscience
 
         docker compose down -v
+
+restart
+
+        docker compose restart ticketing-api
+
+recompile + relance
+
+        docker compose up -d --build ticketing-api
+
+log (postgres ; api ; grafana ; prometheus)
+
+        docker logs -f ticketing-postgres
 
 -- **RUN** --
 
@@ -22,7 +29,7 @@ Scripts : src/main/resources/db/migration
 Convention : V1__init.sql, V2__...sql, …
 Flyway applique automatiquement les migrations au démarrage.
 
-**ARCHI Hexagonale**
+-- **ARCHI Hexagonale** --
 
 *Objectif* : isoler le cœur (métier + use cases) des détails techniques (HTTP, DB).
 
