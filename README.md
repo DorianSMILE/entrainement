@@ -107,15 +107,13 @@ Grace à actuator (métric) + prometheus (scraping) + grafana (visualisation)
 GRAFANA_ADMIN_PASSWORD=admin
 ```
 
-Swagger : http://localhost:8080/swagger-ui/index.html
-
 API : http://localhost:8080
 
 Swagger : http://localhost:8080/swagger-ui/index.html
 
 Actuator : http://localhost:8080/actuator/health
+           http://localhost:8080/actuator/prometheus
 
 Prometheus : http://localhost:9090
-             http://localhost:8080/actuator/prometheus
 
 Grafana : http://localhost:3000

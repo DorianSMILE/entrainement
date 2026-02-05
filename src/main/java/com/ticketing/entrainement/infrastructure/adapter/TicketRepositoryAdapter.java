@@ -6,11 +6,13 @@ import com.ticketing.entrainement.infrastructure.TicketEntity;
 import com.ticketing.entrainement.infrastructure.TicketEntityMapper;
 import com.ticketing.entrainement.infrastructure.TicketJpaRepository;
 import com.ticketing.entrainement.infrastructure.TicketSpecifications;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -53,4 +55,12 @@ public class TicketRepositoryAdapter implements TicketRepositoryPort {
     public void deleteById(UUID id) {
         repo.deleteById(id);
     }
+
+    @Override
+    public List<Ticket> findAllByIds(Iterable<UUID> ids) {
+        return repo.findAllById(ids).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
 }
