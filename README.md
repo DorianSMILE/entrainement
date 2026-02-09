@@ -18,6 +18,11 @@ log (postgres ; api ; grafana ; prometheus)
 
         docker logs -f ticketing-postgres
 
+Pour rebuild api en vidant le cache
+
+        docker compose down
+        docker compose build --no-cache --pull api
+
 -- **RUN** --
 
         mvn spring-boot:run -e
@@ -112,6 +117,7 @@ API : http://localhost:8080
 Swagger : http://localhost:8080/swagger-ui/index.html
 
 Actuator : http://localhost:8080/actuator/health
+            & 
            http://localhost:8080/actuator/prometheus
 
 Prometheus : http://localhost:9090
