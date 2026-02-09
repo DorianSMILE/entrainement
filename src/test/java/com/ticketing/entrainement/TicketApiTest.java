@@ -41,6 +41,9 @@ class TicketApiTest {
         r.add("spring.flyway.enabled", () -> "true");
         // Hibernate ne doit pas créer/modifier le schéma
         r.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+
+        r.add("security.jwt.secret", () -> "c3VwZXItc2VjcmV0LXRlc3Qtc2VjcmV0LXRlc3Qtc2VjcmV0LTEyMw==");
+        r.add("security.jwt.expiration-minutes", () -> "60");
     }
 
     @Autowired TestRestTemplate rest;
