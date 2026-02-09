@@ -18,6 +18,11 @@ log (postgres ; api ; grafana ; prometheus)
 
         docker logs -f ticketing-postgres
 
+Pour rebuild api en vidant le cache
+
+        docker compose down
+        docker compose build --no-cache --pull api
+
 -- **RUN** --
 
         mvn spring-boot:run -e
