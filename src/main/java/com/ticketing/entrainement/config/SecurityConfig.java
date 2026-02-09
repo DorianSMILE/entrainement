@@ -22,21 +22,20 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/auth/login", "/swagger-ui/**", "/v3/api-docs/**", "/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tickets/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/tickets/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/tickets/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/tickets/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/tickets/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/tickets/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/tickets/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults()) // optionnel temporaire, tu peux enlever plus tard
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
