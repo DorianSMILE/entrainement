@@ -142,4 +142,45 @@ class TicketApiTest {
         ResponseEntity<String> afterDelete = rest.getForEntity("/tickets/" + id, String.class);
         assertThat(afterDelete.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
+
+    @Test
+    void create_requires_jwt() throws Exception {
+        // payload valide
+        Map<String, Object> body = Map.of(
+                "title", "Security check",
+                "description", "Should require JWT",
+                "priority", "MEDIUM"
+        );
+
+        HttpHeaders noAuthHeaders = new HttpHeaders();
+        noAuthHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<String> withoutToken = rest.exchange(
+                "/tickets",
+                HttpMethod.POST,
+                new HttpEntity<>(body, noAuthHeaders),
+                String.class
+        );
+
+        assertThat(withoutToken.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        String token = loginAndGetToken();
+
+        HttpHeaders authHeaders = new HttpHeaders();
+        authHeaders.setContentType(MediaType.APPLICATION_JSON);
+        authHeaders.setBearerAuth(token);
+
+        ResponseEntity<String> withToken = rest.exchange(
+                "/tickets",
+                HttpMethod.POST,
+                new HttpEntity<>(body, authHeaders),
+                String.class
+        );
+
+        assertThat(withToken.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(withToken.getBody()).isNotBlank();
+
+        JsonNode createdJson = om.readTree(withToken.getBody());
+        assertThat(createdJson.get("id").asText()).isNotBlank();
+    }
 }
