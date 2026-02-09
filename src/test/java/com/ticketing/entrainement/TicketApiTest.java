@@ -49,29 +49,61 @@ class TicketApiTest {
     @Autowired TestRestTemplate rest;
     @Autowired ObjectMapper om;
 
-    private static HttpHeaders authJsonHeaders() {
+    private String loginAndGetToken() throws Exception {
+        Map<String, String> loginBody = Map.of(
+                "username", USER,
+                "password", PASS
+        );
+
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<String> resp = rest.exchange(
+                "/auth/login",
+                HttpMethod.POST,
+                new HttpEntity<>(loginBody, h),
+                String.class
+        );
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).isNotBlank();
+
+        JsonNode json = om.readTree(resp.getBody());
+
+        assertThat(json.hasNonNull("token")).isTrue();
+        assertThat(json.hasNonNull("tokenType")).isTrue();
+        assertThat(json.get("tokenType").asText()).isEqualTo("Bearer");
+        assertThat(json.hasNonNull("expiresInMinutes")).isTrue();
+        assertThat(json.get("expiresInMinutes").asLong()).isGreaterThan(0);
+
+        return json.get("token").asText();
+    }
+
+    private static HttpHeaders bearerJsonHeaders(String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBasicAuth(USER, PASS);
+        headers.setBearerAuth(token);
         return headers;
     }
 
-    private static HttpHeaders authHeaders() {
+    private static HttpHeaders bearerHeaders(String token) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth(USER, PASS);
+        headers.setBearerAuth(token);
         return headers;
     }
 
     @Test
     void full_flow_create_get_patch_delete() throws Exception {
-        // --- CREATE (POST /tickets) - nécessite auth
+        String token = loginAndGetToken();
+
+        // --- CREATE (POST /tickets) - JWT requis
         Map<String, Object> createBody = Map.of(
                 "title", "Ticket IT",
                 "description", "From integration test",
                 "priority", "MEDIUM"
         );
 
-        HttpEntity<Map<String, Object>> createReq = new HttpEntity<>(createBody, authJsonHeaders());
+        HttpEntity<Map<String, Object>> createReq = new HttpEntity<>(createBody, bearerJsonHeaders(token));
         ResponseEntity<String> created = rest.exchange("/tickets", HttpMethod.POST, createReq, String.class);
 
         assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -87,9 +119,9 @@ class TicketApiTest {
         JsonNode gotJson = om.readTree(got.getBody());
         assertThat(gotJson.get("title").asText()).isEqualTo("Ticket IT");
 
-        // --- PATCH /tickets/{id} - nécessite auth
+        // --- PATCH /tickets/{id} - JWT requis
         Map<String, Object> patchBody = Map.of("title", "Ticket IT updated");
-        HttpEntity<Map<String, Object>> patchReq = new HttpEntity<>(patchBody, authJsonHeaders());
+        HttpEntity<Map<String, Object>> patchReq = new HttpEntity<>(patchBody, bearerJsonHeaders(token));
 
         ResponseEntity<String> patched = rest.exchange("/tickets/" + id, HttpMethod.PATCH, patchReq, String.class);
         assertThat(patched.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -101,10 +133,9 @@ class TicketApiTest {
         ResponseEntity<String> list = rest.getForEntity("/tickets?q=updated", String.class);
         assertThat(list.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // --- DELETE /tickets/{id} - nécessite auth
-        HttpEntity<Void> delReq = new HttpEntity<>(authHeaders());
+        // --- DELETE /tickets/{id} - JWT requis
+        HttpEntity<Void> delReq = new HttpEntity<>(bearerHeaders(token));
         ResponseEntity<Void> deleted = rest.exchange("/tickets/" + id, HttpMethod.DELETE, delReq, Void.class);
-
         assertThat(deleted.getStatusCode()).isIn(HttpStatus.NO_CONTENT, HttpStatus.OK);
 
         // --- GET après delete -> 404
