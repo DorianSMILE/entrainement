@@ -1,13 +1,14 @@
 package com.ticketing.entrainement.api;
 
 import com.ticketing.entrainement.config.JwtService;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import io.jsonwebtoken.Claims;
+import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -17,34 +18,58 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final long expirationMinutes;
 
-    public AuthController(
-            AuthenticationManager authenticationManager,
-            JwtService jwtService,
-            @Value("${security.jwt.expiration-minutes}") long expirationMinutes
-    ) {
+    public AuthController(AuthenticationManager authenticationManager, JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
-        this.expirationMinutes = expirationMinutes;
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody AuthRequest req) {
+    public AuthResponse login(@RequestBody @Valid AuthRequest req) {
+        Authentication auth;
         try {
-            var auth = authenticationManager.authenticate(
+            auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(req.username(), req.password())
             );
-
-            List<String> roles = auth.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .toList();
-
-            String token = jwtService.generateToken(req.username(), roles);
-            return new AuthResponse(token, "Bearer", expirationMinutes);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        } catch (Exception ex) {
+            throw new BadCredentialsException("Invalid username or password");
         }
+
+        List<String> roles = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        String accessToken = jwtService.generateAccessToken(req.username(), roles);
+        String refreshToken = jwtService.generateRefreshToken(req.username());
+
+        return new AuthResponse(
+                accessToken,
+                refreshToken,
+                "Bearer",
+                jwtService.getAccessExpirationMinutes()
+        );
     }
 
+    @PostMapping("/refresh")
+    public AuthResponse refresh(@RequestBody @Valid RefreshRequest req) {
+        Claims claims = jwtService.parseRefreshClaims(req.refreshToken());
+
+        if (!"refresh".equals(String.valueOf(claims.get("typ")))) {
+            throw new BadCredentialsException("Invalid refresh token type");
+        }
+
+        String username = claims.getSubject();
+
+        List<String> roles = List.of("ROLE_ADMIN");
+
+        String newAccessToken = jwtService.generateAccessToken(username, roles);
+        String newRefreshToken = jwtService.generateRefreshToken(username); // rotation simple
+
+        return new AuthResponse(
+                newAccessToken,
+                newRefreshToken,
+                "Bearer",
+                jwtService.getAccessExpirationMinutes()
+        );
+    }
 }
