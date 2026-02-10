@@ -16,35 +16,67 @@ import java.util.List;
 @Service
 public class JwtService {
 
-    private final SecretKey key;
-    private final long expirationMinutes;
+    private final SecretKey accessKey;
+    private final SecretKey refreshKey;
+    private final long accessExpirationMinutes;
+    private final long refreshExpirationDays;
 
     public JwtService(
-            @Value("${security.jwt.secret}") String secret,
-            @Value("${security.jwt.expiration-minutes}") long expirationMinutes
+            @Value("${security.jwt.access-secret}") String accessSecret,
+            @Value("${security.jwt.refresh-secret}") String refreshSecret,
+            @Value("${security.jwt.access-expiration-minutes}") long accessExpirationMinutes,
+            @Value("${security.jwt.refresh-expiration-days}") long refreshExpirationDays
     ) {
-        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
-        this.expirationMinutes = expirationMinutes;
+        this.accessKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessSecret));
+        this.refreshKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshSecret));
+        this.accessExpirationMinutes = accessExpirationMinutes;
+        this.refreshExpirationDays = refreshExpirationDays;
     }
 
-    public String generateToken(String username, List<String> roles) {
+    public String generateAccessToken(String username, List<String> roles) {
         Instant now = Instant.now();
-        Instant exp = now.plus(expirationMinutes, ChronoUnit.MINUTES);
+        Instant exp = now.plus(accessExpirationMinutes, ChronoUnit.MINUTES);
 
         return Jwts.builder()
                 .subject(username)
                 .claim("roles", roles)
+                .claim("typ", "access")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
-                .signWith(key)
+                .signWith(accessKey)
                 .compact();
     }
 
-    public Claims parseClaims(String token) {
+    public String generateRefreshToken(String username) {
+        Instant now = Instant.now();
+        Instant exp = now.plus(refreshExpirationDays, ChronoUnit.DAYS);
+
+        return Jwts.builder()
+                .subject(username)
+                .claim("typ", "refresh")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(exp))
+                .signWith(refreshKey)
+                .compact();
+    }
+
+    public Claims parseAccessClaims(String token) {
         return Jwts.parser()
-                .verifyWith(key)
+                .verifyWith(accessKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public Claims parseRefreshClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(refreshKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public long getAccessExpirationMinutes() {
+        return accessExpirationMinutes;
     }
 }

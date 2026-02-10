@@ -33,7 +33,7 @@ public class SecurityConfig {
                                 res.sendError(HttpServletResponse.SC_FORBIDDEN))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/swagger-ui/**", "/v3/api-docs/**", "/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/auth/login", "/auth/refresh", "/swagger-ui/**", "/v3/api-docs/**", "/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tickets/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/tickets/**").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/tickets/**").authenticated()

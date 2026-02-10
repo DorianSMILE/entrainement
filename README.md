@@ -1,16 +1,17 @@
 -- **DOCKER** --
 
         docker compose down
+        docker compose up
 
 #WARN -v supprime le volume, à utiliser en conscience
 
-        docker compose down -v
+        #docker compose down -v#
 
 restart
 
         docker compose restart ticketing-api
 
-recompile + relance
+recompile + relance l'api
 
         docker compose up -d --build ticketing-api
 
@@ -22,6 +23,7 @@ Pour rebuild api en vidant le cache
 
         docker compose down
         docker compose build --no-cache --pull api
+        docker compose up
 
 -- **RUN** --
 
