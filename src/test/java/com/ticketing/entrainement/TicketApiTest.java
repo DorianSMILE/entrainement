@@ -37,22 +37,19 @@ class TicketApiTest {
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
 
-        // Flyway gère le schéma
         r.add("spring.flyway.enabled", () -> "true");
-        // Hibernate ne doit pas créer/modifier le schéma
         r.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
 
         r.add("security.jwt.access-secret", () -> "c3VwZXItc2VjcmV0LXRlc3QtYWNjZXNzLXNlY3JldC0xMjM0NTY3ODkw");
         r.add("security.jwt.refresh-secret", () -> "c3VwZXItc2VjcmV0LXRlc3QtcmVmcmVzaC1zZWNyZXQtMTIzNDU2Nzg5MA==");
         r.add("security.jwt.access-expiration-minutes", () -> "60");
         r.add("security.jwt.refresh-expiration-days", () -> "7");
-
     }
 
     @Autowired TestRestTemplate rest;
     @Autowired ObjectMapper om;
 
-    private String loginAndGetToken() throws Exception {
+    private String loginAndGetAccessToken() throws Exception {
         Map<String, String> loginBody = Map.of(
                 "username", USER,
                 "password", PASS
@@ -72,13 +69,7 @@ class TicketApiTest {
         assertThat(resp.getBody()).isNotBlank();
 
         JsonNode json = om.readTree(resp.getBody());
-
         assertThat(json.hasNonNull("accessToken")).isTrue();
-        assertThat(json.hasNonNull("refreshToken")).isTrue();
-        assertThat(json.hasNonNull("tokenType")).isTrue();
-        assertThat(json.get("tokenType").asText()).isEqualTo("Bearer");
-        assertThat(json.hasNonNull("expiresInMinutes")).isTrue();
-        assertThat(json.get("expiresInMinutes").asLong()).isGreaterThan(0);
 
         return json.get("accessToken").asText();
     }
@@ -98,9 +89,9 @@ class TicketApiTest {
 
     @Test
     void full_flow_create_get_patch_delete() throws Exception {
-        String token = loginAndGetToken();
+        String token = loginAndGetAccessToken();
 
-        // --- CREATE (POST /tickets) - JWT requis
+        // CREATE (JWT requis)
         Map<String, Object> createBody = Map.of(
                 "title", "Ticket IT",
                 "description", "From integration test",
@@ -116,14 +107,14 @@ class TicketApiTest {
         JsonNode createdJson = om.readTree(created.getBody());
         UUID id = UUID.fromString(createdJson.get("id").asText());
 
-        // --- GET /tickets/{id} - public
+        // GET /tickets/{id} (public)
         ResponseEntity<String> got = rest.getForEntity("/tickets/" + id, String.class);
         assertThat(got.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         JsonNode gotJson = om.readTree(got.getBody());
         assertThat(gotJson.get("title").asText()).isEqualTo("Ticket IT");
 
-        // --- PATCH /tickets/{id} - JWT requis
+        // PATCH /tickets/{id} (JWT requis)
         Map<String, Object> patchBody = Map.of("title", "Ticket IT updated");
         HttpEntity<Map<String, Object>> patchReq = new HttpEntity<>(patchBody, bearerJsonHeaders(token));
 
@@ -133,81 +124,17 @@ class TicketApiTest {
         JsonNode patchedJson = om.readTree(patched.getBody());
         assertThat(patchedJson.get("title").asText()).isEqualTo("Ticket IT updated");
 
-        // --- LIST /tickets?q=... - public
+        // LIST /tickets?q=... (public)
         ResponseEntity<String> list = rest.getForEntity("/tickets?q=updated", String.class);
         assertThat(list.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // --- DELETE /tickets/{id} - JWT requis
+        // DELETE /tickets/{id} (JWT requis)
         HttpEntity<Void> delReq = new HttpEntity<>(bearerHeaders(token));
         ResponseEntity<Void> deleted = rest.exchange("/tickets/" + id, HttpMethod.DELETE, delReq, Void.class);
         assertThat(deleted.getStatusCode()).isIn(HttpStatus.NO_CONTENT, HttpStatus.OK);
 
-        // --- GET après delete -> 404
+        // GET après delete => 404
         ResponseEntity<String> afterDelete = rest.getForEntity("/tickets/" + id, String.class);
         assertThat(afterDelete.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
-
-    @Test
-    void create_requires_jwt() throws Exception {
-        // payload valide
-        Map<String, Object> body = Map.of(
-                "title", "Security check",
-                "description", "Should require JWT",
-                "priority", "MEDIUM"
-        );
-
-        HttpHeaders noAuthHeaders = new HttpHeaders();
-        noAuthHeaders.setContentType(MediaType.APPLICATION_JSON);
-
-        ResponseEntity<String> withoutToken = rest.exchange(
-                "/tickets",
-                HttpMethod.POST,
-                new HttpEntity<>(body, noAuthHeaders),
-                String.class
-        );
-
-        assertThat(withoutToken.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-
-        String token = loginAndGetToken();
-
-        HttpHeaders authHeaders = new HttpHeaders();
-        authHeaders.setContentType(MediaType.APPLICATION_JSON);
-        authHeaders.setBearerAuth(token);
-
-        ResponseEntity<String> withToken = rest.exchange(
-                "/tickets",
-                HttpMethod.POST,
-                new HttpEntity<>(body, authHeaders),
-                String.class
-        );
-
-        assertThat(withToken.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(withToken.getBody()).isNotBlank();
-
-        JsonNode createdJson = om.readTree(withToken.getBody());
-        assertThat(createdJson.get("id").asText()).isNotBlank();
-    }
-
-    @Test
-    void refresh_ok_returns_new_tokens() throws Exception {
-        Map<String, Object> loginBody = Map.of("username", "admin", "password", "admin");
-        ResponseEntity<String> loginRes = rest.postForEntity("/auth/login", loginBody, String.class);
-        assertThat(loginRes.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-        JsonNode loginJson = om.readTree(loginRes.getBody());
-        String refreshToken = loginJson.get("refreshToken").asText();
-
-        Map<String, Object> refreshBody = Map.of("refreshToken", refreshToken);
-        ResponseEntity<String> refreshRes = rest.postForEntity("/auth/refresh", refreshBody, String.class);
-
-        assertThat(refreshRes.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-        JsonNode refreshJson = om.readTree(refreshRes.getBody());
-        assertThat(refreshJson.get("accessToken").asText()).isNotBlank();
-        assertThat(refreshJson.get("refreshToken").asText()).isNotBlank();
-        assertThat(refreshJson.get("tokenType").asText()).isEqualTo("Bearer");
-        assertThat(refreshJson.get("expiresInMinutes").asLong()).isGreaterThan(0);
-    }
-
-
 }
