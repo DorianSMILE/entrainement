@@ -1,7 +1,7 @@
 package com.ticketing.entrainement.api;
 
 import com.ticketing.entrainement.application.ports.security.TokenClaims;
-import com.ticketing.entrainement.infrastructure.adapter.security.JjwtTokenProvider;
+import com.ticketing.entrainement.infrastructure.security.JjwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;

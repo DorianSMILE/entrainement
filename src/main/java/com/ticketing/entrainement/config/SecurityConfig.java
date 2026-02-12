@@ -33,11 +33,16 @@ public class SecurityConfig {
                                 res.sendError(HttpServletResponse.SC_FORBIDDEN))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/refresh", "/swagger-ui/**", "/v3/api-docs/**", "/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/tickets/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/tickets/**").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/tickets/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/tickets/**").authenticated()
+                        .requestMatchers(
+                                "/auth/login",
+                                "/auth/refresh",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/actuator/health",
+                                "/actuator/info"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/tickets/**").authenticated()
+                        .requestMatchers("/tickets/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -49,11 +54,25 @@ public class SecurityConfig {
 
     @Bean
     UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        UserDetails admin = User.withUsername("admin")
+        var admin = org.springframework.security.core.userdetails.User
+                .withUsername("admin")
                 .password(encoder.encode("admin"))
                 .roles("ADMIN")
                 .build();
-        return new InMemoryUserDetailsManager(admin);
+
+        var agent = org.springframework.security.core.userdetails.User
+                .withUsername("agent")
+                .password(encoder.encode("agent"))
+                .roles("AGENT")
+                .build();
+
+        var viewer = org.springframework.security.core.userdetails.User
+                .withUsername("viewer")
+                .password(encoder.encode("viewer"))
+                .roles("VIEWER")
+                .build();
+
+        return new InMemoryUserDetailsManager(admin, agent, viewer);
     }
 
     @Bean

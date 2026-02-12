@@ -1,5 +1,6 @@
 package com.ticketing.entrainement.commun;
 
+import com.ticketing.entrainement.application.exceptions.ForbiddenOperationException;
 import com.ticketing.entrainement.commun.exception.DuplicateErrorResponse;
 import com.ticketing.entrainement.commun.exception.NotFoundException;
 import com.ticketing.entrainement.domain.exception.*;
@@ -79,6 +80,12 @@ public class ApiExceptionHandler {
                 ex.duplicates(),
                 Instant.now()
         );
+    }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ErrorResponse handleForbidden(ForbiddenOperationException ex) {
+        return new ErrorResponse("FORBIDDEN", ex.getMessage(), Instant.now());
     }
 
 }
