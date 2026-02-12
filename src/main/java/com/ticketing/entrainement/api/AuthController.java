@@ -1,7 +1,7 @@
 package com.ticketing.entrainement.api;
 
-import com.ticketing.entrainement.config.JwtService;
-import io.jsonwebtoken.Claims;
+import com.ticketing.entrainement.application.ports.security.TokenClaims;
+import com.ticketing.entrainement.infrastructure.adapter.security.JjwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,11 +17,11 @@ import java.util.List;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
+    private final JjwtTokenProvider jjwtTokenProvider;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtService jwtService) {
+    public AuthController(AuthenticationManager authenticationManager, JjwtTokenProvider jjwtTokenProvider) {
         this.authenticationManager = authenticationManager;
-        this.jwtService = jwtService;
+        this.jjwtTokenProvider = jjwtTokenProvider;
     }
 
     @PostMapping("/login")
@@ -39,37 +39,37 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .toList();
 
-        String accessToken = jwtService.generateAccessToken(req.username(), roles);
-        String refreshToken = jwtService.generateRefreshToken(req.username());
+        String accessToken = jjwtTokenProvider.generateAccessToken(req.username(), roles);
+        String refreshToken = jjwtTokenProvider.generateRefreshToken(req.username());
 
         return new AuthResponse(
                 accessToken,
                 refreshToken,
                 "Bearer",
-                jwtService.getAccessExpirationMinutes()
+                jjwtTokenProvider.getAccessExpirationMinutes()
         );
     }
 
     @PostMapping("/refresh")
     public AuthResponse refresh(@RequestBody @Valid RefreshRequest req) {
-        Claims claims = jwtService.parseRefreshClaims(req.refreshToken());
+        TokenClaims tokenClaims = jjwtTokenProvider.parseRefreshClaims(req.refreshToken());
 
-        if (!"refresh".equals(String.valueOf(claims.get("typ")))) {
+        if (!"refresh".equals(String.valueOf(tokenClaims.type()))) {
             throw new BadCredentialsException("Invalid refresh token type");
         }
 
-        String username = claims.getSubject();
+        String username = tokenClaims.subject();
 
         List<String> roles = List.of("ROLE_ADMIN");
 
-        String newAccessToken = jwtService.generateAccessToken(username, roles);
-        String newRefreshToken = jwtService.generateRefreshToken(username); // rotation simple
+        String newAccessToken = jjwtTokenProvider.generateAccessToken(username, roles);
+        String newRefreshToken = jjwtTokenProvider.generateRefreshToken(username);
 
         return new AuthResponse(
                 newAccessToken,
                 newRefreshToken,
                 "Bearer",
-                jwtService.getAccessExpirationMinutes()
+                jjwtTokenProvider.getAccessExpirationMinutes()
         );
     }
 }

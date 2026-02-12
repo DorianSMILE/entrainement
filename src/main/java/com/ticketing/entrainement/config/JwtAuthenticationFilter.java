@@ -1,6 +1,7 @@
 package com.ticketing.entrainement.config;
 
-import io.jsonwebtoken.Claims;
+import com.ticketing.entrainement.application.ports.security.TokenClaims;
+import com.ticketing.entrainement.infrastructure.adapter.security.JjwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,10 +21,10 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final JjwtTokenProvider jjwtTokenProvider;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
-        this.jwtService = jwtService;
+    public JwtAuthenticationFilter(JjwtTokenProvider jjwtTokenProvider) {
+        this.jjwtTokenProvider = jjwtTokenProvider;
     }
 
     @Override
@@ -37,19 +38,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             String token = authHeader.substring(7);
             try {
-                Claims claims = jwtService.parseAccessClaims(token);
+                TokenClaims tokenClaims = jjwtTokenProvider.parseAccessClaims(token);
 
-                if (!"access".equals(String.valueOf(claims.get("typ")))) {
+                if (!"access".equals(String.valueOf(tokenClaims.type()))) {
                     SecurityContextHolder.clearContext();
                     filterChain.doFilter(request, response);
                     return;
                 }
 
-                String username = claims.getSubject();
+                String username = tokenClaims.subject();
 
                 if (username != null && !username.isBlank()) {
-                    @SuppressWarnings("unchecked")
-                    List<String> roles = claims.get("roles", List.class);
+                    List<String> roles = tokenClaims.roles();
                     if (roles == null) roles = Collections.emptyList();
 
                     var authorities = roles.stream()
