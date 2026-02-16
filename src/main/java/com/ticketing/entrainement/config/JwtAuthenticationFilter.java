@@ -1,7 +1,7 @@
 package com.ticketing.entrainement.config;
 
 import com.ticketing.entrainement.application.ports.security.TokenClaims;
-import com.ticketing.entrainement.infrastructure.adapter.security.JjwtTokenProvider;
+import com.ticketing.entrainement.application.ports.security.TokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,10 +21,10 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JjwtTokenProvider jjwtTokenProvider;
+    private final TokenProvider tokenProvider;
 
-    public JwtAuthenticationFilter(JjwtTokenProvider jjwtTokenProvider) {
-        this.jjwtTokenProvider = jjwtTokenProvider;
+    public JwtAuthenticationFilter(TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
     }
 
     @Override
@@ -38,9 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             String token = authHeader.substring(7);
             try {
-                TokenClaims tokenClaims = jjwtTokenProvider.parseAccessClaims(token);
+                TokenClaims tokenClaims = tokenProvider.parseAccessClaims(token);
 
-                if (!"access".equals(String.valueOf(tokenClaims.type()))) {
+                if (!"access".equals(tokenClaims.type())) {
                     SecurityContextHolder.clearContext();
                     filterChain.doFilter(request, response);
                     return;
@@ -53,6 +53,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     if (roles == null) roles = Collections.emptyList();
 
                     var authorities = roles.stream()
+                            .map(String::trim)
+                            .filter(r -> !r.isBlank())
+                            .map(String::toUpperCase)
+                            .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
                             .map(SimpleGrantedAuthority::new)
                             .toList();
 

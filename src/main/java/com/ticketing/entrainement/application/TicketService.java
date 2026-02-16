@@ -1,12 +1,14 @@
 package com.ticketing.entrainement.application;
 
 import com.ticketing.entrainement.api.TicketDuplicateResult;
+import com.ticketing.entrainement.application.ports.AuthorizationPort;
 import com.ticketing.entrainement.application.ports.TicketDuplicateCheckerPort;
 import com.ticketing.entrainement.application.ports.TicketRepositoryPort;
 import com.ticketing.entrainement.commun.exception.NotFoundException;
 import com.ticketing.entrainement.domain.Ticket;
 import com.ticketing.entrainement.domain.TicketPriority;
 import com.ticketing.entrainement.domain.TicketStatus;
+import com.ticketing.entrainement.domain.auth.Permission;
 import com.ticketing.entrainement.domain.exception.DuplicateTicketException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,14 +24,17 @@ import java.util.UUID;
 public class TicketService {
     private final TicketRepositoryPort port;
     private final TicketDuplicateCheckerPort duplicateChecker;
+    private final AuthorizationPort authorization;
 
-    public TicketService(TicketRepositoryPort port, TicketDuplicateCheckerPort duplicateChecker) {
+    public TicketService(TicketRepositoryPort port, TicketDuplicateCheckerPort duplicateChecker, AuthorizationPort authorization) {
         this.port = port;
         this.duplicateChecker = duplicateChecker;
+        this.authorization = authorization;
     }
 
     @Transactional
     public Ticket create(String title, String description, TicketPriority priority) {
+        authorization.check(Permission.TICKET_CREATE);
 
         String normalizedTitle = com.ticketing.entrainement.domain.TicketText.normalize(title);
 
@@ -57,17 +62,23 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public Ticket getById(UUID id) {
+        authorization.check(Permission.TICKET_READ);
+
         return port.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ticket not found: " + id));
     }
 
     @Transactional(readOnly = true)
     public Page<Ticket> list(TicketStatus status, TicketPriority priority, String q, Pageable pageable) {
+        authorization.check(Permission.TICKET_READ);
+
         return port.search(status, priority, q, pageable);
     }
 
     @Transactional
     public Ticket update(UUID id, String title, String description, TicketStatus status, TicketPriority priority) {
+        authorization.check(Permission.TICKET_UPDATE);
+
         Ticket ticket = port.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ticket not found: " + id));
 
@@ -98,6 +109,8 @@ public class TicketService {
 
     @Transactional
     public void delete(UUID id) {
+        authorization.check(Permission.TICKET_DELETE);
+
         if (!port.existsById(id)) {
             throw new NotFoundException("Ticket not found: " + id);
         }

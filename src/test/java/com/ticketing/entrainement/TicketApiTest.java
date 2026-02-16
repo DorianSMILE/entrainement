@@ -65,14 +65,28 @@ class TicketApiTest {
                 String.class
         );
 
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getStatusCode())
+                .as("Login status, body=%s", resp.getBody())
+                .isEqualTo(HttpStatus.OK);
+
         assertThat(resp.getBody()).isNotBlank();
 
         JsonNode json = om.readTree(resp.getBody());
-        assertThat(json.hasNonNull("accessToken")).isTrue();
 
-        return json.get("accessToken").asText();
+        assertThat(json.has("accessToken"))
+                .as("Login JSON=%s", resp.getBody())
+                .isTrue();
+
+        assertThat(json.get("accessToken").isTextual())
+                .as("accessToken absent/invalid, JSON=%s", resp.getBody())
+                .isTrue();
+
+        String token = json.get("accessToken").asText();
+        assertThat(token).isNotBlank();
+
+        return token;
     }
+
 
     private static HttpHeaders bearerJsonHeaders(String token) {
         HttpHeaders headers = new HttpHeaders();
@@ -108,7 +122,15 @@ class TicketApiTest {
         UUID id = UUID.fromString(createdJson.get("id").asText());
 
         // GET /tickets/{id} (public)
-        ResponseEntity<String> got = rest.getForEntity("/tickets/" + id, String.class);
+        HttpEntity<Void> getReq = new HttpEntity<>(bearerHeaders(token));
+
+        ResponseEntity<String> got = rest.exchange(
+                "/tickets/" + id,
+                HttpMethod.GET,
+                getReq,
+                String.class
+        );
+
         assertThat(got.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         JsonNode gotJson = om.readTree(got.getBody());
@@ -125,7 +147,12 @@ class TicketApiTest {
         assertThat(patchedJson.get("title").asText()).isEqualTo("Ticket IT updated");
 
         // LIST /tickets?q=... (public)
-        ResponseEntity<String> list = rest.getForEntity("/tickets?q=updated", String.class);
+        ResponseEntity<String> list = rest.exchange(
+                "/tickets?q=updated",
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(token)),
+                String.class
+        );
         assertThat(list.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // DELETE /tickets/{id} (JWT requis)
@@ -134,7 +161,12 @@ class TicketApiTest {
         assertThat(deleted.getStatusCode()).isIn(HttpStatus.NO_CONTENT, HttpStatus.OK);
 
         // GET après delete => 404
-        ResponseEntity<String> afterDelete = rest.getForEntity("/tickets/" + id, String.class);
+        ResponseEntity<String> afterDelete = rest.exchange(
+                "/tickets/" + id,
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(token)),
+                String.class
+        );
         assertThat(afterDelete.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }

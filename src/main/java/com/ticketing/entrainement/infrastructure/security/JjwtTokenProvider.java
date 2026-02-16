@@ -1,4 +1,4 @@
-package com.ticketing.entrainement.infrastructure.adapter.security;
+package com.ticketing.entrainement.infrastructure.security;
 
 import com.ticketing.entrainement.application.ports.security.TokenClaims;
 import com.ticketing.entrainement.application.ports.security.TokenProvider;
@@ -61,7 +61,7 @@ public class JjwtTokenProvider implements TokenProvider {
         return Jwts.builder()
                 .subject(username)
                 .claim("typ", "refresh")
-                .id(UUID.randomUUID().toString()) // jti standard
+                .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .signWith(refreshKey)
