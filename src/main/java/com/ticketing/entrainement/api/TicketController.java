@@ -1,5 +1,6 @@
 package com.ticketing.entrainement.api;
 
+import com.ticketing.entrainement.application.CleanupClosedTicketsUseCase;
 import com.ticketing.entrainement.application.TicketService;
 import com.ticketing.entrainement.domain.Ticket;
 import com.ticketing.entrainement.domain.TicketPriority;
@@ -17,10 +18,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -28,9 +31,11 @@ import java.util.UUID;
 public class TicketController {
 
     private final TicketService service;
+    private final CleanupClosedTicketsUseCase useCase;
 
-    public TicketController(TicketService service) {
+    public TicketController(TicketService service, CleanupClosedTicketsUseCase useCase) {
         this.service = service;
+        this.useCase = useCase;
     }
 
     @Operation(summary = "Create a ticket")
@@ -127,6 +132,18 @@ public class TicketController {
                         d.score()
                 ))
                 .toList();
+    }
+
+    @Operation(summary = "Delete old closed tickets")
+    @DeleteMapping("/cleanup")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> cleanup() {
+
+        int deleted = useCase.execute();
+
+        return ResponseEntity.ok(Map.of(
+                "deleted", deleted
+        ));
     }
 
 }

@@ -3,9 +3,11 @@ package com.ticketing.entrainement.infrastructure;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,5 +41,13 @@ public interface TicketJpaRepository extends JpaRepository<TicketEntity, UUID>, 
             @Param("threshold") double threshold,
             Pageable pageable
     );
+
+    @Modifying
+    @Query("""
+        delete from TicketEntity t
+        where t.status = 'CLOSED'
+          and t.updatedAt < :threshold
+    """)
+    int deleteClosedNotModifiedSince(@Param("threshold") Instant threshold);
 
 }
