@@ -13,5 +13,6 @@ public record TicketResponse(
         TicketStatus status,
         TicketPriority priority,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        UUID parentId
 ) {}

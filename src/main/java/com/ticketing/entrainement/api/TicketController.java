@@ -115,7 +115,8 @@ public class TicketController {
                 t.status(),
                 t.priority(),
                 t.createdAt(),
-                t.updatedAt()
+                t.updatedAt(),
+                t.parentId()
         );
     }
 
