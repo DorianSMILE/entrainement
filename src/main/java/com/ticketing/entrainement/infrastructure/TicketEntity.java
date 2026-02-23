@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -39,6 +41,13 @@ public class TicketEntity {
     @Column(name = "normalized_title", nullable = false)
     private String normalizedTitle;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private TicketEntity parent;
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = false)
+    private Set<TicketEntity> children = new HashSet<>();
+
     protected TicketEntity() {
         // JPA
     }
@@ -67,6 +76,9 @@ public class TicketEntity {
 
     public String getNormalizedTitle() { return normalizedTitle; }
     public void setNormalizedTitle(String normalizedTitle) { this.normalizedTitle = normalizedTitle; }
+
+    public TicketEntity getParent() { return parent; }
+    public void setParent(TicketEntity parent) { this.parent = parent; }
 
     @PrePersist
     public void onCreate() {

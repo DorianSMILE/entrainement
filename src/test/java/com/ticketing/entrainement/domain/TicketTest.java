@@ -65,7 +65,8 @@ class TicketTest {
                 status,
                 TicketPriority.MEDIUM,
                 Instant.now().minusSeconds(60),
-                Instant.now().minusSeconds(30)
+                Instant.now().minusSeconds(30),
+                null
         );
     }
 }

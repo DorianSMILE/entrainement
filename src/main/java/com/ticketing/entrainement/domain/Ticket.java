@@ -16,7 +16,8 @@ public record Ticket(
     TicketStatus status,
     TicketPriority priority,
     Instant createdAt,
-    Instant updatedAt
+    Instant updatedAt,
+    UUID parentId
 ) {
 
     private static final int TITLE_MAX = 200;
@@ -31,7 +32,7 @@ public record Ticket(
         if (t.length() > TITLE_MAX) throw new InvalidTicketTitleException("Title too long (max 200)");
         if (t.equals(title)) return this;
 
-        return new Ticket(id, t, description, status, priority, createdAt, Instant.now());
+        return new Ticket(id, t, description, status, priority, createdAt, Instant.now(), parentId);
     }
 
     public Ticket changeDescription(String newDescription) {
@@ -43,13 +44,13 @@ public record Ticket(
         }
         if (newDescription.equals(description)) return this;
 
-        return new Ticket(id, title, newDescription, status, priority, createdAt, Instant.now());
+        return new Ticket(id, title, newDescription, status, priority, createdAt, Instant.now(), parentId);
     }
 
     public Ticket changePriority(TicketPriority newPriority) {
         if (newPriority == null || newPriority == priority) return this;
         ensureNotClosed();
-        return new Ticket(id, title, description, status, newPriority, createdAt, Instant.now());
+        return new Ticket(id, title, description, status, newPriority, createdAt, Instant.now(), parentId);
     }
 
     public Ticket changeStatus(TicketStatus newStatus) {
@@ -59,7 +60,7 @@ public record Ticket(
             throw new InvalidTicketStatusTransition(status, newStatus);
         }
 
-        return new Ticket(id, title, description, newStatus, priority, createdAt, Instant.now());
+        return new Ticket(id, title, description, newStatus, priority, createdAt, Instant.now(), parentId);
     }
 
     private static boolean isAllowed(TicketStatus from, TicketStatus to) {
@@ -77,6 +78,45 @@ public record Ticket(
         if (status == TicketStatus.CLOSED) {
             throw new TicketClosedException(id);
         }
+    }
+
+    public Ticket attachToParent(UUID newParentId) {
+        if (newParentId == null) return this;
+        ensureNotClosed();
+
+        if (newParentId.equals(id)) {
+            throw new IllegalArgumentException("Ticket cannot be its own parent");
+        }
+
+        if (newParentId.equals(parentId)) return this;
+
+        return new Ticket(
+                id,
+                title,
+                description,
+                status,
+                priority,
+                createdAt,
+                Instant.now(),
+                newParentId
+        );
+    }
+
+    public Ticket detachFromParent() {
+        ensureNotClosed();
+
+        if (parentId == null) return this;
+
+        return new Ticket(
+                id,
+                title,
+                description,
+                status,
+                priority,
+                createdAt,
+                Instant.now(),
+                null
+        );
     }
 
 }
