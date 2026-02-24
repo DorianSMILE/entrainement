@@ -6,7 +6,7 @@ import com.ticketing.entrainement.infrastructure.TicketEntity;
 import com.ticketing.entrainement.infrastructure.TicketEntityMapper;
 import com.ticketing.entrainement.infrastructure.TicketJpaRepository;
 import com.ticketing.entrainement.infrastructure.TicketSpecifications;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -21,10 +21,12 @@ public class TicketRepositoryAdapter implements TicketRepositoryPort {
 
     private final TicketJpaRepository repo;
     private final TicketEntityMapper mapper;
+    private final EntityManager em;
 
-    public TicketRepositoryAdapter(TicketJpaRepository repo, TicketEntityMapper mapper) {
+    public TicketRepositoryAdapter(TicketJpaRepository repo, TicketEntityMapper mapper, EntityManager em) {
         this.repo = repo;
         this.mapper = mapper;
+        this.em = em;
     }
 
     @Override
@@ -42,7 +44,18 @@ public class TicketRepositoryAdapter implements TicketRepositoryPort {
 
     @Override
     public Ticket save(Ticket ticket) {
-        TicketEntity saved = repo.save(mapper.toEntity(ticket));
+
+        TicketEntity entity = mapper.toEntity(ticket);
+
+        if (ticket.parentId() != null) {
+            TicketEntity parentRef =
+                    em.getReference(TicketEntity.class, ticket.parentId());
+            entity.setParent(parentRef);
+        } else {
+            entity.setParent(null);
+        }
+        TicketEntity saved = repo.save(entity);
+
         return mapper.toDomain(saved);
     }
 
@@ -61,6 +74,11 @@ public class TicketRepositoryAdapter implements TicketRepositoryPort {
         return repo.findAllById(ids).stream()
                 .map(mapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public UUID findParentId(UUID ticketId) {
+        return repo.findParentId(ticketId);
     }
 
 }

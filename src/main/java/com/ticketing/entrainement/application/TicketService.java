@@ -55,7 +55,7 @@ public class TicketService {
 
         Instant now = Instant.now();
         Ticket ticket = new Ticket(UUID.randomUUID(), title, description,
-                TicketStatus.OPEN, priority, now, now);
+                TicketStatus.OPEN, priority, now, now, null);
 
         return port.save(ticket);
     }

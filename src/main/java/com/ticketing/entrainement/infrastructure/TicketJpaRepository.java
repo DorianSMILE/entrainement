@@ -50,4 +50,6 @@ public interface TicketJpaRepository extends JpaRepository<TicketEntity, UUID>, 
     """)
     int deleteClosedNotModifiedSince(@Param("threshold") Instant threshold);
 
+    @Query("select t.parent.id from TicketEntity t where t.id = :id")
+    UUID findParentId(UUID id);
 }

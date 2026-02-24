@@ -12,5 +12,6 @@ public interface TicketEntityMapper {
             target = "normalizedTitle",
             expression = "java(com.ticketing.entrainement.domain.TicketText.normalize(ticket.title()))"
     )
+    @Mapping(target = "parent", ignore = true)
     TicketEntity toEntity(Ticket ticket);
 }

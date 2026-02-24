@@ -17,4 +17,5 @@ public interface TicketRepositoryPort {
     boolean existsById(UUID id);
     void deleteById(UUID id);
     List<Ticket> findAllByIds(Iterable<UUID> ids);
+    UUID findParentId(UUID ticketId);
 }
