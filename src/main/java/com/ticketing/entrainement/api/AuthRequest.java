@@ -1,3 +1,10 @@
 package com.ticketing.entrainement.api;
 
-public record AuthRequest(String username, String password) {}
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record AuthRequest(
+        @Schema(example = "admin")
+        String username,
+        @Schema(example = "admin")
+        String password
+) {}
