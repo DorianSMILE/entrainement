@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
+import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -88,4 +89,12 @@ public class ApiExceptionHandler {
         return new ErrorResponse("FORBIDDEN", ex.getMessage(), Instant.now());
     }
 
+    @ExceptionHandler(TicketHasOpenChildrenException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, Object> handle(TicketHasOpenChildrenException e) {
+        return Map.of(
+                "error", "TICKET_HAS_OPEN_CHILDREN",
+                "message", e.getMessage()
+        );
+    }
 }

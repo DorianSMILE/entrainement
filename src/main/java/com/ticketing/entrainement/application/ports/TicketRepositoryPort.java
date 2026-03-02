@@ -18,4 +18,5 @@ public interface TicketRepositoryPort {
     void deleteById(UUID id);
     List<Ticket> findAllByIds(Iterable<UUID> ids);
     UUID findParentId(UUID ticketId);
+    long countChildrenNotClosed(UUID parentId);
 }

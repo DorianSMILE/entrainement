@@ -6,6 +6,7 @@ import com.ticketing.entrainement.application.ports.TicketDuplicateCheckerPort;
 import com.ticketing.entrainement.application.ports.TicketRepositoryPort;
 import com.ticketing.entrainement.commun.exception.NotFoundException;
 import com.ticketing.entrainement.domain.Ticket;
+import com.ticketing.entrainement.domain.TicketClosingPolicy;
 import com.ticketing.entrainement.domain.TicketPriority;
 import com.ticketing.entrainement.domain.TicketStatus;
 import com.ticketing.entrainement.domain.auth.Permission;
@@ -25,11 +26,13 @@ public class TicketService {
     private final TicketRepositoryPort port;
     private final TicketDuplicateCheckerPort duplicateChecker;
     private final AuthorizationPort authorization;
+    private final TicketClosingPolicy ticketClosingPolicy;
 
-    public TicketService(TicketRepositoryPort port, TicketDuplicateCheckerPort duplicateChecker, AuthorizationPort authorization) {
+    public TicketService(TicketRepositoryPort port, TicketDuplicateCheckerPort duplicateChecker, AuthorizationPort authorization, TicketClosingPolicy ticketClosingPolicy) {
         this.port = port;
         this.duplicateChecker = duplicateChecker;
         this.authorization = authorization;
+        this.ticketClosingPolicy = ticketClosingPolicy;
     }
 
     @Transactional
@@ -96,6 +99,12 @@ public class TicketService {
         }
 
         if (status != null && status != updated.status()) {
+
+            if (status == TicketStatus.CLOSED) {
+                // refuse la fermeture si enfants non CLOSED
+                ticketClosingPolicy.ensureClosable(updated.id(), port::countChildrenNotClosed);
+            }
+
             updated = updated.changeStatus(status);
         }
 
