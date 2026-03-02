@@ -52,4 +52,12 @@ public interface TicketJpaRepository extends JpaRepository<TicketEntity, UUID>, 
 
     @Query("select t.parent.id from TicketEntity t where t.id = :id")
     UUID findParentId(UUID id);
+
+    @Query("""
+    select count(c)
+    from TicketEntity c
+    where c.parent.id = :parentId
+      and c.status <> com.ticketing.entrainement.domain.TicketStatus.CLOSED
+    """)
+    long countChildrenNotClosed(UUID parentId);
 }

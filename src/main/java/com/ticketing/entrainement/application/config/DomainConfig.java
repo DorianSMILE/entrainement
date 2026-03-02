@@ -1,5 +1,6 @@
 package com.ticketing.entrainement.application.config;
 
+import com.ticketing.entrainement.domain.TicketClosingPolicy;
 import com.ticketing.entrainement.domain.TicketHierarchyService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,4 +12,10 @@ public class DomainConfig {
     public TicketHierarchyService ticketHierarchyService() {
         return new TicketHierarchyService();
     }
+
+    @Bean
+    public TicketClosingPolicy ticketClosingPolicy() {
+        return new TicketClosingPolicy();
+    }
+
 }

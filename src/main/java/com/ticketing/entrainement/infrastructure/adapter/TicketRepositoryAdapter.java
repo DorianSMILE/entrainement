@@ -81,4 +81,9 @@ public class TicketRepositoryAdapter implements TicketRepositoryPort {
         return repo.findParentId(ticketId);
     }
 
+    @Override
+    public long countChildrenNotClosed(UUID parentId) {
+        return repo.countChildrenNotClosed(parentId);
+    }
+
 }
